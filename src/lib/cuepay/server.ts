@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
+import { broadcast } from "./events";
 import { iso, maskPhone, normalizeKePhone, randomRef } from "./format";
 import type {
   AlertRow,
@@ -92,7 +93,7 @@ function mapSession(r: SessionRow): PlaySession {
 }
 
 async function tick(sql: Awaited<ReturnType<typeof getSql>>) {
-  await sql`
+  const expired = await sql<{ location_id: string; id: string }>`
     update pool_tables t
     set status = 'idle', busy_since = null
     from locations l
@@ -100,7 +101,11 @@ async function tick(sql: Awaited<ReturnType<typeof getSql>>) {
       and t.status = 'busy'
       and t.busy_since is not null
       and t.busy_since + (l.game_minutes || ' minutes')::interval < now()
+    returning t.location_id, t.id
   `;
+  for (const row of expired) {
+    broadcast({ type: "table:update", locationId: row.location_id, tableId: row.id });
+  }
 
   const low = await sql<{ id: string; location_id: string; name: string; loc: string; battery_pct: number }>`
     select t.id, t.location_id, t.name, l.name as loc, t.battery_pct
@@ -544,6 +549,8 @@ export const confirmStk = createServerFn({ method: "POST" })
       where s.id = ${sess.id}
       limit 1
     `;
+    broadcast({ type: "session:update", locationId: sess.location_id, sessionId: sess.id });
+    broadcast({ type: "table:update", locationId: sess.location_id, tableId: sess.table_id });
     return { ok: true as const, session: mapSession(updated[0]!), already: false };
   });
 
@@ -591,6 +598,7 @@ export const releasePaidGame = createServerFn({ method: "POST" })
         set pending_games = greatest(pending_games - 1, 0)
         where id = ${table.id}
       `;
+      broadcast({ type: "table:update", locationId: table.location_id, tableId: table.id });
       return {
         ok: true as const,
         queued: true,
@@ -609,6 +617,7 @@ export const releasePaidGame = createServerFn({ method: "POST" })
           busy_since = now()
       where id = ${table.id}
     `;
+    broadcast({ type: "table:update", locationId: table.location_id, tableId: table.id });
     return {
       ok: true as const,
       queued: false,
@@ -873,6 +882,7 @@ export const forceRelease = createServerFn({ method: "POST" })
         where id = ${table.id}
       `;
       await audit(sql, staff, "release", `Released paid game on ${table.name}`, table.id);
+      broadcast({ type: "table:update", locationId: table.location_id, tableId: table.id });
       return { ok: true as const, comped: false };
     }
     const id = crypto.randomUUID();
@@ -890,6 +900,7 @@ export const forceRelease = createServerFn({ method: "POST" })
       where id = ${table.id}
     `;
     await audit(sql, staff, "force_open", `Comped / force-opened ${table.name}`, table.id);
+    broadcast({ type: "table:update", locationId: table.location_id, tableId: table.id });
     return { ok: true as const, comped: true };
   });
 
@@ -930,6 +941,7 @@ export const setTableStatus = createServerFn({ method: "POST" })
       `;
     }
     await audit(sql, staff, "status", `${table.name} → ${next}`, table.id);
+    broadcast({ type: "table:update", locationId: table.location_id, tableId: table.id });
     return { ok: true };
   });
 

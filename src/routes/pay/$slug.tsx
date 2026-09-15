@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { FeltMini } from "@/components/felt-mini";
@@ -12,10 +13,25 @@ export const Route = createFileRoute("/pay/$slug")({ component: PayVenue });
 
 function PayVenue() {
   const { slug } = Route.useParams();
+  const qc = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: ["public-location", slug],
     queryFn: () => getPublicLocation({ data: { slug } }),
   });
+
+  useEffect(() => {
+    const source = new EventSource("/api/live");
+    source.onmessage = (e) => {
+      try {
+        const event = JSON.parse(e.data);
+        if (event.type === "ping") return;
+        if (event.type === "table:update" || event.type === "session:update") {
+          void qc.invalidateQueries({ queryKey: ["public-location", slug] });
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, [slug, qc]);
 
   if (isPending) {
     return (

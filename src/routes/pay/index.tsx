@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Wordmark } from "@/components/logo";
@@ -8,10 +9,25 @@ import { listPublicLocations } from "@/lib/cuepay/server";
 export const Route = createFileRoute("/pay/")({ component: PayIndex });
 
 function PayIndex() {
+  const qc = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: ["public-locations"],
     queryFn: () => listPublicLocations(),
   });
+
+  useEffect(() => {
+    const source = new EventSource("/api/live");
+    source.onmessage = (e) => {
+      try {
+        const event = JSON.parse(e.data);
+        if (event.type === "ping") return;
+        if (event.type === "table:update" || event.type === "session:update") {
+          void qc.invalidateQueries({ queryKey: ["public-locations"] });
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, [qc]);
 
   return (
     <div className="felt-wash min-h-dvh">

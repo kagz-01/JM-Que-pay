@@ -5,6 +5,7 @@ import { TableCard } from "@/components/table-card";
 import { forceRelease, getFloor, setTableStatus } from "@/lib/cuepay/server";
 import { formatKes } from "@/lib/cuepay/format";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/app/floor/$locationId")({ component: Floor });
 
@@ -14,8 +15,25 @@ function Floor() {
   const { data, isPending, error } = useQuery({
     queryKey: ["floor", locationId],
     queryFn: () => getFloor({ data: { locationId } }),
-    refetchInterval: 4000,
   });
+
+  useEffect(() => {
+    const source = new EventSource("/api/live");
+    source.onmessage = (e) => {
+      try {
+        const event = JSON.parse(e.data);
+        if (event.type === "ping") return;
+        if (event.type === "table:update" || event.type === "session:update") {
+          // If the event is for this location, or we are on the dashboard, invalidate
+          if (event.locationId === locationId) {
+            void qc.invalidateQueries({ queryKey: ["floor", locationId] });
+          }
+          void qc.invalidateQueries({ queryKey: ["dashboard"] });
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, [locationId, qc]);
   const mutate = useMutation({
     mutationFn: async (input: { kind: "release" | "lock" | "unlock"; tableId: string }) => {
       if (input.kind === "release") return forceRelease({ data: { tableId: input.tableId } });
