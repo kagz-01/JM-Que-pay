@@ -1027,6 +1027,45 @@ export const getSettings = createServerFn({ method: "GET" })
 
 // ── Admin (Owner-only) ─────────────────────────────────────────────────────
 
+import { auth } from "@/lib/auth/server";
+
+export const createManager = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { email: string; locationId: string }) => data)
+  .handler(async ({ context, data }) => {
+    const sql = await getSql();
+    await tick(sql);
+    const me = await ensureStaff(context.userId);
+    if (me.role !== "owner") throw new Error("Forbidden: owner only");
+
+    // Better Auth doesn't let us bypass email verification or set a raw hash easily without the admin plugin,
+    // but we can programmatically sign them up with a temp password. 
+    // They will need to log in with this password and can change it later.
+    const tempPassword = "CuePayManager123!";
+    
+    try {
+      // Use Better Auth's server API to create the user and credential account
+      const res = await auth.api.signUpEmail({
+        body: {
+          email: data.email,
+          password: tempPassword,
+          name: "Manager",
+        },
+      });
+
+      if (!res?.user?.id) throw new Error("Failed to create auth user");
+
+      await sql`
+        insert into staff (user_id, org_id, role, location_id)
+        values (${res.user.id}, ${me.orgId}, 'manager', ${data.locationId})
+      `;
+
+      return { ok: true as const, tempPassword };
+    } catch (e: any) {
+      return { ok: false as const, error: e.message || "Failed to create manager" };
+    }
+  });
+
 /** Global organization overview for the owner: all locations + top-line KPIs. */
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])

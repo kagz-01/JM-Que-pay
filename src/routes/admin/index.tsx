@@ -12,6 +12,7 @@ import {
 import { getAdminOverview } from "@/lib/cuepay/server";
 import { formatKes } from "@/lib/cuepay/format";
 import type { StaffRole } from "@/lib/cuepay/types";
+import { AddManagerDialog } from "@/components/add-manager-dialog";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
@@ -127,7 +128,10 @@ function AdminDashboard() {
 
       {/* Staff list */}
       <section>
-        <h2 className="mb-3 font-display text-2xl tracking-tight">Staff</h2>
+        <div className="mb-3 flex items-end justify-between">
+          <h2 className="font-display text-2xl tracking-tight">Staff</h2>
+          <AddManagerDialog locations={locations} />
+        </div>
         <div className="rounded-[var(--radius-xl)] bg-surface hairline divide-y divide-border">
           {staff.length === 0 ? (
             <p className="p-5 text-sm text-muted">No staff accounts yet.</p>
