@@ -22,15 +22,15 @@ function ReportsPage() {
 
       {isPending ? (
         <div className="space-y-4">
-          <div className="h-64 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
-          <div className="h-48 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+          <div className="h-64 animate-pulse rounded-(--radius-xl) bg-surface" />
+          <div className="h-48 animate-pulse rounded-(--radius-xl) bg-surface" />
         </div>
       ) : !data ? (
         <p>No data</p>
       ) : (
         <div className="space-y-6">
           {/* Daily Trend */}
-          <section className="rounded-[var(--radius-xl)] border border-border bg-surface p-5">
+          <section className="rounded-(--radius-xl) border border-border bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium text-muted">Daily Revenue (Last 7 Days)</h2>
             <div className="flex h-48 items-end gap-2">
               {data.days.map((d, i) => {
@@ -39,7 +39,7 @@ function ReportsPage() {
                 return (
                   <div key={i} className="group relative flex flex-1 flex-col items-center justify-end gap-2">
                     <div
-                      className="w-full min-w-[8px] rounded-t-sm bg-accent/20 transition-colors group-hover:bg-accent"
+                      className="w-full min-w-2 rounded-t-sm bg-accent/20 transition-colors group-hover:bg-accent"
                       style={{ height: d.kes > 0 ? height : "4px" }}
                     />
                     <span className="text-[10px] text-muted">{d.day.slice(5)}</span>
@@ -54,7 +54,7 @@ function ReportsPage() {
           </section>
 
           {/* Table Performance */}
-          <section className="rounded-[var(--radius-xl)] border border-border bg-surface">
+          <section className="rounded-(--radius-xl) border border-border bg-surface">
             <div className="border-b border-border px-5 py-4">
               <h2 className="text-sm font-medium text-muted">Table Performance (Last 7 Days)</h2>
             </div>

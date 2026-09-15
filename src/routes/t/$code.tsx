@@ -85,7 +85,7 @@ function TablePay() {
   if (isPending) {
     return (
       <div className="felt-wash grid min-h-dvh place-items-center">
-        <div className="h-48 w-72 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+        <div className="h-48 w-72 animate-pulse rounded-(--radius-xl) bg-surface" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ function TablePay() {
         <LcdPanel table={table} className="mt-3" />
 
         {released ? (
-          <div className="mt-6 rounded-[var(--radius-xl)] bg-surface p-5 hairline">
+          <div className="mt-6 rounded-(--radius-xl) bg-surface p-5 hairline">
             <div className="mb-3 grid size-10 place-items-center rounded-full bg-accent/15 text-accent">
               <Check className="size-5" />
             </div>
@@ -145,7 +145,7 @@ function TablePay() {
             </Button>
           </div>
         ) : receipt ? (
-          <div className="mt-6 rounded-[var(--radius-xl)] bg-surface p-5 hairline">
+          <div className="mt-6 rounded-(--radius-xl) bg-surface p-5 hairline">
             {table.status === "busy" && receipt.status === "paid" ? (
               <>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 text-sm font-medium text-blue-400">

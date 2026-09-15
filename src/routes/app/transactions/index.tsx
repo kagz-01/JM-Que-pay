@@ -35,13 +35,13 @@ function TransactionsPage() {
       </div>
 
       {isPending ? (
-        <div className="h-64 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+        <div className="h-64 animate-pulse rounded-(--radius-xl) bg-surface" />
       ) : !data || data.sessions.length === 0 ? (
-        <div className="rounded-[var(--radius-xl)] border border-border border-dashed p-12 text-center">
+        <div className="rounded-(--radius-xl) border border-border border-dashed p-12 text-center">
           <p className="text-muted">No transactions found.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-xl)] border border-border bg-surface">
+        <div className="overflow-x-auto rounded-(--radius-xl) border border-border bg-surface">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-elevated/50 text-muted">

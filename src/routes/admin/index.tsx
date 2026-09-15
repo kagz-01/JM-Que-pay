@@ -99,7 +99,7 @@ function AdminDashboard() {
               key={loc.id}
               to="/app/floor/$locationId"
               params={{ locationId: loc.id }}
-              className="rounded-[var(--radius-xl)] bg-surface p-5 hairline transition-colors hover:bg-elevated group"
+              className="rounded-(--radius-xl) bg-surface p-5 hairline transition-colors hover:bg-elevated group"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -132,7 +132,7 @@ function AdminDashboard() {
           <h2 className="font-display text-2xl tracking-tight">Staff</h2>
           <AddManagerDialog locations={locations} />
         </div>
-        <div className="rounded-[var(--radius-xl)] bg-surface hairline divide-y divide-border">
+        <div className="rounded-(--radius-xl) bg-surface hairline divide-y divide-border">
           {staff.length === 0 ? (
             <p className="p-5 text-sm text-muted">No staff accounts yet.</p>
           ) : (
@@ -158,7 +158,7 @@ function Kpi({
   hint: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-xl)] bg-surface p-4 hairline space-y-2">
+    <div className="rounded-(--radius-xl) bg-surface p-4 hairline space-y-2">
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted">
         {icon}
         {label}
@@ -215,7 +215,7 @@ function AdminSkeleton() {
       <div className="h-10 w-64 animate-pulse rounded bg-elevated" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+          <div key={i} className="h-28 animate-pulse rounded-(--radius-xl) bg-surface" />
         ))}
       </div>
     </div>

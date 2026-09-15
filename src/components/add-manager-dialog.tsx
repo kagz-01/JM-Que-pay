@@ -41,7 +41,7 @@ export function AddManagerDialog({ locations }: { locations: LocationCard[] }) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[var(--radius-xl)] bg-surface p-6 shadow-xl border border-border">
+          <div className="w-full max-w-sm rounded-(--radius-xl) bg-surface p-6 shadow-xl border border-border">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display tracking-tight">Add Manager</h2>
               <button
@@ -74,7 +74,7 @@ export function AddManagerDialog({ locations }: { locations: LocationCard[] }) {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-muted">Location Assignment</label>
                 <select
-                  className="w-full rounded-[var(--radius-sm)] border border-border bg-bg px-3 py-2 text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                  className="w-full rounded-sm border border-border bg-bg px-3 py-2 text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                   required
                   value={locationId}
                   onChange={(e) => setLocationId(e.target.value)}
