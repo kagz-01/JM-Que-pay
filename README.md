@@ -109,9 +109,8 @@ src/
     ├── auth/                   # Better Auth setup & middleware
     └── db.ts                   # PGLite (dev) / Neon (prod) SQL client
 
-migrations/
-├── 0001_auth.sql               # Better Auth schema
-└── 0002_cuepay.sql             # App schema + Kenyan demo seed data
+database/
+└── schema.sql                  # Combined database schema and seed data
 ```
 
 ---

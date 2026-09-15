@@ -1,4 +1,3 @@
-import { pendingMigrations } from "../../scripts/migration-plan.mjs";
 
 /** Which database backend is active. */
 export type DbSource = "neon" | "pglite";
@@ -119,9 +118,7 @@ async function createPgliteSql(): Promise<Sql> {
       },
     });
     await pg.waitReady;
-    await pg.exec(
-      "create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())",
-    );
+
     return pg;
   })().catch((err) => {
     globalRef.__pgliteInstance__ = undefined;
@@ -129,31 +126,14 @@ async function createPgliteSql(): Promise<Sql> {
   });
   const pg = await globalRef.__pgliteInstance__;
 
-  // Apply migrations/ (the single schema source) so preview matches production.
-  // SQL is inlined by the bundler via import.meta.glob (no runtime fs); applied
-  // files are tracked in _migrations. The glob does not descend, so the opt-in
-  // auth schema under migrations/auth/ stays out. Runs once per module instance
-  // — so an HMR reload after adding a migration file applies it live — with
+  // Apply database/schema.sql (the single schema source) so preview matches production.
+  // SQL is inlined by the bundler via dynamic import with ?raw.
+  // Runs once per module instance — so an HMR reload after adding a migration file applies it live — with
   // passes serialized on a global chain so concurrent callers never
   // double-apply.
   const migrate = async (): Promise<void> => {
-    const migrations = import.meta.glob("/migrations/*.sql", {
-      query: "?raw",
-      import: "default",
-      eager: true,
-    }) as Record<string, string>;
-    const doneRows = await pg.query<{ name: string }>(
-      "select name from _migrations",
-    );
-    const done = doneRows.rows.map((r) => r.name);
-    for (const { name, path } of pendingMigrations(Object.keys(migrations), done)) {
-      // Apply + record atomically (parity with scripts/migrate.mjs) so a failed
-      // statement can't leave a file half-applied but untracked.
-      await pg.transaction(async (tx) => {
-        await tx.exec(migrations[path]);
-        await tx.query("insert into _migrations (name) values ($1)", [name]);
-      });
-    }
+    const schemaSql = (await import("../../database/schema.sql?raw")).default;
+    await pg.exec(schemaSql);
   };
   const pass = (globalRef.__pgliteMigrateChain__ ?? Promise.resolve())
     .catch(() => undefined) // an earlier failed pass must not wedge the chain
@@ -183,7 +163,7 @@ async function createSql(): Promise<Sql> {
  * Get the shared, **server-only** SQL client. Neon when `DATABASE_URL` is set,
  * otherwise the local PGLite fallback. Memoized — safe to call per request.
  *
- * Schema comes from `migrations/*.sql`, auto-applied before the first query on
+ * Schema comes from `database/schema.sql`, auto-applied before the first query on
  * both backends — define tables there, never inline in server functions.
  */
 export function getSql(): Promise<Sql> {
@@ -195,7 +175,7 @@ export function getSql(): Promise<Sql> {
 }
 
 /**
- * The shared PGLite instance (preview only), with `migrations/*.sql` applied.
+ * The shared PGLite instance (preview only), with `database/schema.sql` applied.
  * Lets Better Auth persist to the SAME embedded DB as app data in preview (via a
  * Kysely dialect). Throws when `DATABASE_URL` is set (that path uses Neon).
  */
@@ -213,7 +193,7 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  * Finish DB bootstrap before the server handles traffic.
  *
  * - **PGLite** (preview / no `DATABASE_URL`): open the in-memory DB and apply
- *   `migrations/*.sql`. Idempotent — concurrent callers share one promise.
+ *   `database/schema.sql`. Idempotent — concurrent callers share one promise.
  * - **Neon**: no-op (pool is created lazily on first query).
  *
  * Vite `configureServer` awaits this at dev startup; production imports of this

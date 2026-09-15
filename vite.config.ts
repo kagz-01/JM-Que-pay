@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -10,15 +10,9 @@ import { nitro } from "nitro/vite";
 import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
-import { isMigrationFile } from "./scripts/migration-plan.mjs";
 
-/** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
-function hasGlobbedMigrations(root: string): boolean {
-  try {
-    return readdirSync(join(root, "migrations")).some(isMigrationFile);
-  } catch {
-    return false;
-  }
+function hasDatabaseSchema(root: string): boolean {
+  return existsSync(join(root, "database", "schema.sql"));
 }
 
 /**
@@ -35,7 +29,7 @@ function pgliteBootstrapPlugin(): Plugin {
     name: "app-builder:pglite-bootstrap",
     apply: "serve",
     async configureServer(server) {
-      if (!hasGlobbedMigrations(server.config.root)) return;
+      if (!hasDatabaseSchema(server.config.root)) return;
       try {
         const mod = (await server.ssrLoadModule("/src/lib/db.ts")) as {
           ensureDbReady?: () => Promise<void>;
