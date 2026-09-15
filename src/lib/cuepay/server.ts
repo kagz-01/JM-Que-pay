@@ -93,17 +93,45 @@ function mapSession(r: SessionRow): PlaySession {
 }
 
 async function tick(sql: Awaited<ReturnType<typeof getSql>>) {
-  const expired = await sql<{ location_id: string; id: string }>`
-    update pool_tables t
-    set status = 'idle', busy_since = null
-    from locations l
-    where t.location_id = l.id
-      and t.status = 'busy'
+  const expired = await sql<{ id: string; location_id: string }>`
+    select t.id, t.location_id
+    from pool_tables t
+    join locations l on l.id = t.location_id
+    where t.status = 'busy'
       and t.busy_since is not null
       and t.busy_since + (l.game_minutes || ' minutes')::interval < now()
-    returning t.location_id, t.id
   `;
+
   for (const row of expired) {
+    // Try to pop the queue
+    const paid = await sql<{ id: string }>`
+      select id from play_sessions
+      where table_id = ${row.id} and status = 'paid'
+      order by paid_at asc
+      limit 1
+    `;
+
+    if (paid.length > 0) {
+      await sql`
+        update play_sessions
+        set status = 'released', released_at = now()
+        where id = ${paid[0]!.id}
+      `;
+      await sql`
+        update pool_tables
+        set status = 'busy',
+            busy_since = now() + interval '2 minutes',
+            pending_games = greatest(pending_games - 1, 0)
+        where id = ${row.id}
+      `;
+      broadcast({ type: "session:update", locationId: row.location_id, sessionId: paid[0]!.id });
+    } else {
+      await sql`
+        update pool_tables
+        set status = 'idle', busy_since = null
+        where id = ${row.id}
+      `;
+    }
     broadcast({ type: "table:update", locationId: row.location_id, tableId: row.id });
   }
 

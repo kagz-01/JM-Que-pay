@@ -49,11 +49,18 @@ export function elapsed(fromIso: string | null | undefined): string {
   if (!fromIso) return "0:00";
   const start = new Date(fromIso).getTime();
   if (Number.isNaN(start)) return "0:00";
-  const secs = Math.max(0, Math.floor((Date.now() - start) / 1000));
+  const secs = Math.floor((Date.now() - start) / 1000);
+  if (secs < 0) {
+    const s = Math.abs(secs);
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `-${m}:${rem.toString().padStart(2, "0")}`;
+  }
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
 
 export function maskPhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");

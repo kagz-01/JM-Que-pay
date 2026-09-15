@@ -146,34 +146,61 @@ function TablePay() {
           </div>
         ) : receipt ? (
           <div className="mt-6 rounded-[var(--radius-xl)] bg-surface p-5 hairline">
-            <p className="text-xs uppercase tracking-[0.18em] text-accent">Digital receipt</p>
-            <h2 className="mt-2 font-display text-3xl tracking-tight">{formatKes(receipt.amountKes)}</h2>
-            <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Table</dt>
-                <dd>
-                  {receipt.locationName} · {receipt.tableName}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">M-Pesa ref</dt>
-                <dd className="font-mono">{receipt.mpesaRef}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Phone</dt>
-                <dd className="font-mono">{receipt.phoneMasked}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Paid</dt>
-                <dd>{formatWhen(receipt.paidAt)}</dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-sm text-muted">
-              SMS sent to {receipt.phoneMasked}. Press the table button — or release from here — to drop the balls.
-            </p>
-            <Button className="mt-5 w-full" size="lg" onClick={() => release.mutate()} disabled={release.isPending}>
-              {release.isPending ? "Firing solenoid…" : "Press to open"}
-            </Button>
+            {table.status === "busy" && receipt.status === "paid" ? (
+              <>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 text-sm font-medium text-blue-400">
+                  <div className="size-2 animate-pulse rounded-full bg-blue-500" />
+                  You're in the queue
+                </div>
+                <h2 className="font-display text-2xl tracking-tight">Waiting for table</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Your payment of {formatKes(receipt.amountKes)} is confirmed. The table will unlock automatically when the current game ends.
+                </p>
+                <div className="mt-4 rounded-lg bg-bg p-3 text-sm">
+                  <div className="flex justify-between text-muted">
+                    <span>M-Pesa ref</span>
+                    <span className="font-mono">{receipt.mpesaRef}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs uppercase tracking-[0.18em] text-accent">Digital receipt</p>
+                <h2 className="mt-2 font-display text-3xl tracking-tight">{formatKes(receipt.amountKes)}</h2>
+                <dl className="mt-4 space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Table</dt>
+                    <dd>
+                      {receipt.locationName} · {receipt.tableName}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">M-Pesa ref</dt>
+                    <dd className="font-mono">{receipt.mpesaRef}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Phone</dt>
+                    <dd className="font-mono">{receipt.phoneMasked}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Paid</dt>
+                    <dd>{formatWhen(receipt.paidAt)}</dd>
+                  </div>
+                </dl>
+                {receipt.status === "paid" ? (
+                  <>
+                    <p className="mt-4 text-sm text-muted">
+                      SMS sent to {receipt.phoneMasked}. Press the table button — or release from here — to drop the balls.
+                    </p>
+                    <Button className="mt-5 w-full" size="lg" onClick={() => release.mutate()} disabled={release.isPending}>
+                      {release.isPending ? "Firing solenoid…" : "Press to open"}
+                    </Button>
+                  </>
+                ) : (
+                  <p className="mt-4 text-sm text-accent">Table unlocked automatically.</p>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <form
@@ -202,7 +229,11 @@ function TablePay() {
               size="lg"
               disabled={startPay.isPending || table.status === "maintenance" || table.status === "offline"}
             >
-              {startPay.isPending ? "Sending prompt…" : `Lipa ${formatKes(table.priceKes)}`}
+              {startPay.isPending
+                ? "Sending prompt…"
+                : table.status === "busy"
+                  ? `Join Queue for ${formatKes(table.priceKes)}`
+                  : `Lipa ${formatKes(table.priceKes)}`}
             </Button>
             <p className="text-center text-xs text-subtle">
               Buy Goods till {tillNumber} · {table.gameMinutes} min game
