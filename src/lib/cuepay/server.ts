@@ -996,3 +996,52 @@ export const getSettings = createServerFn({ method: "GET" })
     `;
     return { me, locations, tables: tables.map(mapTable) };
   });
+
+// ── Admin (Owner-only) ─────────────────────────────────────────────────────
+
+/** Global organization overview for the owner: all locations + top-line KPIs. */
+export const getAdminOverview = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    await tick(sql);
+    const me = await ensureStaff(context.userId);
+    if (me.role !== "owner") throw new Error("Forbidden: owner only");
+
+    const locations = await fetchLocations(me.orgId, null);
+    const totals = await sql<{ kes: number; games: number; sessions: number }>`
+      select
+        coalesce(sum(s.amount_kes), 0)::int  as kes,
+        count(*) filter (where s.status in ('paid','released'))::int as games,
+        count(*)::int as sessions
+      from play_sessions s
+      join locations l on l.id = s.location_id
+      where l.org_id = ${me.orgId}
+        and s.created_at >= date_trunc('day', now() at time zone 'Africa/Nairobi')
+          at time zone 'Africa/Nairobi'
+    `;
+    const staff = await sql<{ id: string; user_id: string; role: string; location_id: string | null; location_name: string | null; email: string | null }>`
+      select st.id, st.user_id, st.role, st.location_id, l.name as location_name,
+        u.email
+      from staff st
+      left join locations l on l.id = st.location_id
+      left join "user" u on u.id = st.user_id
+      where st.org_id = ${me.orgId}
+      order by st.role, u.email
+    `;
+    return {
+      me,
+      locations,
+      staff: staff.map((s) => ({
+        id: s.id,
+        userId: s.user_id,
+        role: s.role,
+        locationId: s.location_id,
+        locationName: s.location_name,
+        email: s.email,
+      })),
+      todayKes: Number(totals[0]?.kes ?? 0),
+      todayGames: Number(totals[0]?.games ?? 0),
+    };
+  });
+

@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAlertsRouteImport } from './routes/app/alerts'
@@ -32,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
   path: '/app',
@@ -41,6 +48,11 @@ const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiLiveRoute = ApiLiveRouteImport.update({
   id: '/api/live',
@@ -115,6 +127,7 @@ const ApiHardwareTablesIdRoute = ApiHardwareTablesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/api/live': typeof ApiLiveRoute
@@ -124,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AppTransactionsRoute
   '/pay/$slug': typeof PaySlugRoute
   '/t/$code': typeof TCodeRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/pay/': typeof PayIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -142,6 +156,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AppTransactionsRoute
   '/pay/$slug': typeof PaySlugRoute
   '/t/$code': typeof TCodeRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/pay': typeof PayIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -153,6 +168,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/api/live': typeof ApiLiveRoute
@@ -162,6 +178,7 @@ export interface FileRoutesById {
   '/app/transactions': typeof AppTransactionsRoute
   '/pay/$slug': typeof PaySlugRoute
   '/t/$code': typeof TCodeRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/pay/': typeof PayIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -174,6 +191,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/app'
     | '/login'
     | '/api/live'
@@ -183,6 +201,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/pay/$slug'
     | '/t/$code'
+    | '/admin/'
     | '/app/'
     | '/pay/'
     | '/api/auth/$'
@@ -201,6 +220,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/pay/$slug'
     | '/t/$code'
+    | '/admin'
     | '/app'
     | '/pay'
     | '/api/auth/$'
@@ -211,6 +231,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/app'
     | '/login'
     | '/api/live'
@@ -220,6 +241,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/pay/$slug'
     | '/t/$code'
+    | '/admin/'
     | '/app/'
     | '/pay/'
     | '/api/auth/$'
@@ -231,6 +253,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -251,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -264,6 +294,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/api/live': {
       id: '/api/live'
@@ -366,6 +403,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 interface AppRouteRouteChildren {
   AppAlertsRoute: typeof AppAlertsRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -392,6 +441,7 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiLiveRoute: ApiLiveRoute,
