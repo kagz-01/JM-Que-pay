@@ -44,7 +44,7 @@ function Landing() {
           
           <h1 className="font-display text-5xl sm:text-7xl font-bold tracking-tight mb-6 leading-tight">
             Unlock the Table. <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-accent to-emerald-400">
               Play the Game.
             </span>
           </h1>
@@ -115,8 +115,8 @@ function Landing() {
                 )
               }
             ].map((f, i) => (
-              <div key={i} className="bg-surface p-8 rounded-[var(--radius-xl)] hairline group hover:bg-elevated transition-colors">
-                <div className="w-12 h-12 bg-bg rounded-[var(--radius-lg)] hairline flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div key={i} className="bg-surface p-8 rounded-(--radius-xl) hairline group hover:bg-elevated transition-colors">
+                <div className="w-12 h-12 bg-bg rounded-lg hairline flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   {f.icon}
                 </div>
                 <h3 className="text-xl font-bold font-display mb-2">{f.title}</h3>

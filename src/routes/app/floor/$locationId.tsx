@@ -58,7 +58,7 @@ function Floor() {
   if (isPending) {
     return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-72 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+        <div key={i} className="h-72 animate-pulse rounded-(--radius-xl) bg-surface" />
       ))}
     </div>;
   }

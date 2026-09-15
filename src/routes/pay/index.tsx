@@ -45,14 +45,14 @@ function PayIndex() {
         <div className="mt-6 space-y-3">
           {isPending
             ? [0, 1, 2].map((i) => (
-                <div key={i} className="h-28 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+                <div key={i} className="h-28 animate-pulse rounded-(--radius-xl) bg-surface" />
               ))
             : (data ?? []).map((v) => (
                 <Link
                   key={v.id}
                   to="/pay/$slug"
                   params={{ slug: v.slug }}
-                  className="flex items-center justify-between rounded-[var(--radius-xl)] bg-surface p-5 hairline"
+                  className="flex items-center justify-between rounded-(--radius-xl) bg-surface p-5 hairline"
                 >
                   <div>
                     <p className="text-xs uppercase tracking-[0.16em] text-muted">

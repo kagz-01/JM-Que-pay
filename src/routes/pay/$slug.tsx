@@ -38,7 +38,7 @@ function PayVenue() {
       <div className="felt-wash min-h-dvh px-4 py-8">
         <div className="mx-auto max-w-lg space-y-3">
           <div className="h-10 w-40 animate-pulse rounded bg-elevated" />
-          <div className="h-48 animate-pulse rounded-[var(--radius-xl)] bg-surface" />
+          <div className="h-48 animate-pulse rounded-(--radius-xl) bg-surface" />
         </div>
       </div>
     );
@@ -91,7 +91,7 @@ function PayVenue() {
             );
             if (blocked) {
               return (
-                <div key={t.id} className="rounded-[var(--radius-lg)] bg-surface p-3 opacity-70 hairline">
+                <div key={t.id} className="rounded-lg bg-surface p-3 opacity-70 hairline">
                   {inner}
                 </div>
               );
@@ -102,7 +102,7 @@ function PayVenue() {
                 to="/t/$code"
                 params={{ code: t.code }}
                 className={cn(
-                  "rounded-[var(--radius-lg)] bg-surface p-3 hairline transition-colors hover:bg-elevated",
+                  "rounded-lg bg-surface p-3 hairline transition-colors hover:bg-elevated",
                 )}
               >
                 {inner}
