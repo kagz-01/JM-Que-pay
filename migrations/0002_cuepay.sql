@@ -1,0 +1,172 @@
+-- CuePay operational schema + demo seed (Kenyan pool halls)
+
+create table if not exists organizations (
+  id text primary key,
+  name text not null,
+  till_number text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists staff (
+  user_id text primary key,
+  org_id text not null references organizations(id),
+  role text not null check (role in ('owner', 'manager')),
+  location_id text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists locations (
+  id text primary key,
+  org_id text not null references organizations(id),
+  name text not null,
+  slug text not null unique,
+  city text not null,
+  area text not null,
+  address text not null,
+  hours text not null,
+  game_minutes int not null default 15,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists pool_tables (
+  id text primary key,
+  location_id text not null references locations(id),
+  name text not null,
+  code text not null unique,
+  price_kes int not null default 50,
+  status text not null default 'idle'
+    check (status in ('idle', 'busy', 'offline', 'maintenance')),
+  busy_since timestamptz,
+  pending_games int not null default 0,
+  hub_online boolean not null default true,
+  battery_pct int not null default 96,
+  last_seen timestamptz not null default now()
+);
+
+create index if not exists pool_tables_location_idx on pool_tables (location_id);
+
+create table if not exists play_sessions (
+  id text primary key,
+  table_id text not null references pool_tables(id),
+  location_id text not null references locations(id),
+  amount_kes int not null,
+  phone_masked text not null,
+  checkout_id text not null unique,
+  mpesa_ref text,
+  status text not null
+    check (status in ('pending', 'paid', 'released', 'failed', 'expired')),
+  paid_at timestamptz,
+  released_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists play_sessions_table_idx on play_sessions (table_id);
+create index if not exists play_sessions_location_idx on play_sessions (location_id);
+create index if not exists play_sessions_created_idx on play_sessions (created_at desc);
+
+create table if not exists alerts (
+  id text primary key,
+  org_id text not null references organizations(id),
+  location_id text,
+  table_id text,
+  kind text not null,
+  message text not null,
+  severity text not null check (severity in ('info', 'warn', 'critical')),
+  resolved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists alerts_open_idx on alerts (org_id, resolved, created_at desc);
+
+create table if not exists audit_log (
+  id text primary key,
+  org_id text not null references organizations(id),
+  user_id text not null,
+  table_id text,
+  action text not null,
+  detail text not null,
+  created_at timestamptz not null default now()
+);
+
+-- ── Seed: one demo organisation, four Kenyan venues ──────────────────────────
+insert into organizations (id, name, till_number)
+values ('org-cuepay-demo', 'CuePay Venues', '564321')
+on conflict (id) do nothing;
+
+insert into locations (id, org_id, name, slug, city, area, address, hours, game_minutes)
+values
+  ('loc-westlands', 'org-cuepay-demo', 'Westlands Cue Club', 'westlands', 'Nairobi', 'Westlands', 'Mpaka Road, Westlands', '10:00 – 02:00', 15),
+  ('loc-kilimani',  'org-cuepay-demo', 'The Break Room',     'kilimani',  'Nairobi', 'Kilimani',  'Argwings Kodhek Road',   '12:00 – 01:00', 15),
+  ('loc-nyali',     'org-cuepay-demo', 'Nyali Waterfront',   'nyali',     'Mombasa', 'Nyali',     'Links Road, Nyali',      '14:00 – 03:00', 20),
+  ('loc-kisumu',    'org-cuepay-demo', 'Lakeside Sports Bar','kisumu',    'Kisumu',  'CBD',       'Oginga Odinga Street',   '11:00 – 00:00', 15)
+on conflict (id) do nothing;
+
+insert into pool_tables (id, location_id, name, code, price_kes, status, busy_since, pending_games, hub_online, battery_pct, last_seen)
+values
+  ('tbl-west-1', 'loc-westlands', 'Table 1', 'WEST-1', 50, 'idle',         null, 0, true,  94, now() - interval '20 seconds'),
+  ('tbl-west-2', 'loc-westlands', 'Table 2', 'WEST-2', 50, 'busy',         now() - interval '8 minutes', 0, true, 88, now() - interval '8 seconds'),
+  ('tbl-west-3', 'loc-westlands', 'Table 3', 'WEST-3', 50, 'idle',         null, 2, true,  91, now() - interval '12 seconds'),
+  ('tbl-west-4', 'loc-westlands', 'Table 4', 'WEST-4', 50, 'maintenance',  null, 0, true,  70, now() - interval '2 minutes'),
+  ('tbl-kili-1', 'loc-kilimani',  'Table 1', 'KILI-1', 50, 'idle',         null, 0, true,  18, now() - interval '40 seconds'),
+  ('tbl-kili-2', 'loc-kilimani',  'Table 2', 'KILI-2', 50, 'busy',         now() - interval '12 minutes', 0, true, 76, now() - interval '6 seconds'),
+  ('tbl-kili-3', 'loc-kilimani',  'Table 3', 'KILI-3', 50, 'idle',         null, 1, true,  82, now() - interval '15 seconds'),
+  ('tbl-nyali-1','loc-nyali',     'Table 1', 'NYALI-1',80, 'idle',         null, 0, true,  97, now() - interval '9 seconds'),
+  ('tbl-nyali-2','loc-nyali',     'Table 2', 'NYALI-2',80, 'busy',         now() - interval '4 minutes', 0, true, 90, now() - interval '4 seconds'),
+  ('tbl-nyali-3','loc-nyali',     'Table 3', 'NYALI-3',80, 'idle',         null, 0, true,  85, now() - interval '22 seconds'),
+  ('tbl-nyali-4','loc-nyali',     'Table 4', 'NYALI-4',80, 'offline',      null, 0, false, 42, now() - interval '26 minutes'),
+  ('tbl-ksm-1',  'loc-kisumu',    'Table 1', 'KSM-1',  40, 'idle',         null, 0, true,  93, now() - interval '11 seconds'),
+  ('tbl-ksm-2',  'loc-kisumu',    'Table 2', 'KSM-2',  40, 'busy',         now() - interval '3 minutes', 0, true, 87, now() - interval '5 seconds')
+on conflict (id) do nothing;
+
+-- Paid games waiting for the table-side button
+insert into play_sessions (id, table_id, location_id, amount_kes, phone_masked, checkout_id, mpesa_ref, status, paid_at, created_at)
+values
+  ('sess-pend-1', 'tbl-west-3', 'loc-westlands', 50, '0712***214', 'ws_CO_PEND_1', 'RHI4K2M91A', 'paid', now() - interval '6 minutes', now() - interval '7 minutes'),
+  ('sess-pend-2', 'tbl-west-3', 'loc-westlands', 50, '0741***088', 'ws_CO_PEND_2', 'RHI8P0Q33C', 'paid', now() - interval '2 minutes', now() - interval '3 minutes'),
+  ('sess-pend-3', 'tbl-kili-3', 'loc-kilimani',  50, '0708***551', 'ws_CO_PEND_3', 'RHI2N7T18F', 'paid', now() - interval '4 minutes', now() - interval '5 minutes')
+on conflict (id) do nothing;
+
+-- Active games (released, currently occupying the table)
+insert into play_sessions (id, table_id, location_id, amount_kes, phone_masked, checkout_id, mpesa_ref, status, paid_at, released_at, created_at)
+values
+  ('sess-live-1', 'tbl-west-2', 'loc-westlands', 50, '0799***430', 'ws_CO_LIVE_1', 'RHI6B1L04D', 'released', now() - interval '9 minutes', now() - interval '8 minutes', now() - interval '10 minutes'),
+  ('sess-live-2', 'tbl-kili-2', 'loc-kilimani',  50, '0722***917', 'ws_CO_LIVE_2', 'RHI9C5W72H', 'released', now() - interval '13 minutes', now() - interval '12 minutes', now() - interval '14 minutes'),
+  ('sess-live-3', 'tbl-nyali-2','loc-nyali',     80, '0112***663', 'ws_CO_LIVE_3', 'RHI3D8Y20K', 'released', now() - interval '5 minutes', now() - interval '4 minutes', now() - interval '6 minutes'),
+  ('sess-live-4', 'tbl-ksm-2',  'loc-kisumu',    40, '0757***102', 'ws_CO_LIVE_4', 'RHI1E4Z55M', 'released', now() - interval '4 minutes', now() - interval '3 minutes', now() - interval '5 minutes')
+on conflict (id) do nothing;
+
+-- Historical released games across the last ~7 days
+insert into play_sessions (
+  id, table_id, location_id, amount_kes, phone_masked, checkout_id, mpesa_ref, status, paid_at, released_at, created_at
+)
+select
+  'sess-hist-' || g,
+  t.id,
+  t.location_id,
+  t.price_kes,
+  '07' || lpad(((g * 13) % 90 + 10)::text, 2, '0') || '***' || lpad(((g * 17) % 900)::text, 3, '0'),
+  'ws_CO_HIST_' || g,
+  'RHX' || lpad(g::text, 7, '0'),
+  'released',
+  now() - ((g * 2) || ' hours')::interval + interval '40 seconds',
+  now() - ((g * 2) || ' hours')::interval + interval '70 seconds',
+  now() - ((g * 2) || ' hours')::interval
+from generate_series(1, 84) as g
+join (
+  select id, location_id, price_kes,
+         row_number() over (order by id) as rn,
+         count(*) over () as n
+  from pool_tables
+  where status <> 'offline'
+) t on t.rn = ((g - 1) % t.n) + 1
+on conflict (id) do nothing;
+
+insert into alerts (id, org_id, location_id, table_id, kind, message, severity, resolved, created_at)
+values
+  ('alrt-batt-kili1', 'org-cuepay-demo', 'loc-kilimani', 'tbl-kili-1', 'low_battery',
+   'The Break Room · Table 1 battery at 18%. Swap the pack before evening rush.', 'warn', false, now() - interval '50 minutes'),
+  ('alrt-off-nyali4', 'org-cuepay-demo', 'loc-nyali', 'tbl-nyali-4', 'hub_offline',
+   'Nyali Waterfront · Table 4 node has not checked in for 26 minutes.', 'critical', false, now() - interval '26 minutes'),
+  ('alrt-maint-west4','org-cuepay-demo', 'loc-westlands', 'tbl-west-4', 'maintenance',
+   'Westlands Cue Club · Table 4 is in maintenance. Payments are blocked.', 'info', false, now() - interval '3 hours')
+on conflict (id) do nothing;
