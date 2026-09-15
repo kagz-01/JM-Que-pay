@@ -1,9 +1,10 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "JM-Que-pay";
+const APP_NAME = "CuePay";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -11,7 +12,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
-      { name: "theme-color", content: "#000000" },
+      { name: "theme-color", content: "#0a0a0a" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -31,6 +32,7 @@ export const Route = createRootRoute({
         <AuthProvider>
           <Outlet />
         </AuthProvider>
+        <PwaInstallBanner />
         <Scripts />
       </body>
     </html>
